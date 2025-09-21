@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Countdown — Yeyy</title>
+<style>
+  body {
+    margin:0; font-family:system-ui,Segoe UI,Roboto,Arial;
+    background: radial-gradient(circle at top,#1e293b,#0f172a);
+    color:#fff; display:flex; justify-content:center; align-items:center;
+    height:100vh; flex-direction:column;
+  }
+  h1 { font-size:22px; margin-bottom:20px; font-weight:500; opacity:0.85; }
+
+  .countdown {
+    display:flex; gap:15px; margin-bottom:25px;
+  }
+
+  .flip-card {
+    perspective:1000px;
+  }
+  .digit {
+    background:#111; color:#0ff; font-size:48px; font-weight:700;
+    width:70px; height:90px; display:flex; align-items:center; justify-content:center;
+    border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,0.5) inset, 0 0 10px #06b6d4;
+    position:relative; overflow:hidden;
+  }
+  .label {
+    text-align:center; font-size:13px; margin-top:8px; opacity:0.8;
+  }
+
+  .controls {
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+  }
+  input[type=datetime-local] {
+    padding:8px; border-radius:8px; border:none; outline:none;
+    background:#ffffff11; color:#fff;
+  }
+  button {
+    padding:10px 14px; border-radius:10px; border:none;
+    cursor:pointer; font-weight:600; background:#06b6d4; color:#012;
+    transition:transform 0.15s;
+  }
+  button:active { transform:scale(0.95); }
+
+  .note { margin-top:18px; font-size:13px; max-width:600px; text-align:center; opacity:0.75; }
+
+  /* Flip animation */
+  .flip {
+    animation: flipAnim 0.6s ease forwards;
+  }
+  @keyframes flipAnim {
+    0% { transform: rotateX(0deg); }
+    50% { transform: rotateX(-90deg); }
+    100% { transform: rotateX(0deg); }
+  }
+</style>
+</head>
+<body>
+  <h1>Countdown Timer</h1>
+  <div class="countdown">
+    <div class="flip-card"><div id="days" class="digit">00</div><div class="label">Hari</div></div>
+    <div class="flip-card"><div id="hours" class="digit">00</div><div class="label">Jam</div></div>
+    <div class="flip-card"><div id="minutes" class="digit">00</div><div class="label">Menit</div></div>
+    <div class="flip-card"><div id="seconds" class="digit">00</div><div class="label">Detik</div></div>
+  </div>
+
+  <div class="controls">
+    <input id="targetInput" type="datetime-local" />
+    <button id="setBtn">Set</button>
+    <button id="startNow">Start 1 menit</button>
+    <button id="shareBtn">Bagikan ke WhatsApp</button>
+  </div>
+
+  <div class="note">
+    Tambahkan parameter URL untuk langsung membuka countdown:  
+    <code>?target=2025-09-21T15:30</code>
+  </div>
+
+<script>
+(function(){
+  const daysEl=document.getElementById('days');
+  const hrsEl=document.getElementById('hours');
+  const minEl=document.getElementById('minutes');
+  const secEl=document.getElementById('seconds');
+  const input=document.getElementById('targetInput');
+  const setBtn=document.getElementById('setBtn');
+  const startNow=document.getElementById('startNow');
+  const shareBtn=document.getElementById('shareBtn');
+
+  let target=null;
+
+  const params=new URLSearchParams(location.search);
+  if(params.has('target')){
+    const d=new Date(params.get('target'));
+    if(!isNaN(d)) target=d;
+  }
+
+  function pad(n){return n.toString().padStart(2,'0');}
+  function flip(el,newVal){
+    if(el.textContent!==newVal){
+      el.textContent=newVal;
+      el.classList.remove('flip');
+      void el.offsetWidth; // restart animation
+      el.classList.add('flip');
+    }
+  }
+
+  function tick(){
+    if(!target){ [daysEl,hrsEl,minEl,secEl].forEach(e=>e.textContent="00"); return;}
+    const now=new Date();
+    let diff=Math.max(0,Math.floor((target-now)/1000));
+    if(diff<=0){
+      [daysEl,hrsEl,minEl,secEl].forEach(e=>flip(e,"00"));
+      return;
+    }
+    const d=Math.floor(diff/86400); diff-=d*86400;
+    const h=Math.floor(diff/3600); diff-=h*3600;
+    const m=Math.floor(diff/60); const s=diff%60;
+    flip(daysEl,pad(d)); flip(hrsEl,pad(h)); flip(minEl,pad(m)); flip(secEl,pad(s));
+  }
+  setInterval(tick,1000);
+
+  setBtn.addEventListener('click',()=>{
+    if(!input.value){alert("Pilih waktu dulu");return;}
+    const d=new Date(input.value);
+    if(isNaN(d)){alert("Format salah");return;}
+    target=d;
+    const u=new URL(location.href);
+    u.searchParams.set('target',input.value);
+    history.replaceState(null,'',u.toString());
+  });
+
+  startNow.addEventListener('click',()=>{
+    const d=new Date(Date.now()+60*1000);
+    target=d; input.value=d.toISOString().slice(0,16);
+    const u=new URL(location.href);
+    u.searchParams.set('target',input.value);
+    history.replaceState(null,'',u.toString());
+  });
+
+  shareBtn.addEventListener('click',()=>{
+    const url=location.href;
+    const text=encodeURIComponent("Lihat countdown: "+url);
+    const wa="https://wa.me/?text="+text;
+    if(navigator.share){
+      navigator.share({title:"Countdown",text:"Lihat countdown: "+url,url});
+    } else {
+      window.open(wa,"_blank");
+    }
+  });
+
+  if(target){ input.value=target.toISOString().slice(0,16);}
+  tick();
+})();
+</script>
+</body>
+</html>
