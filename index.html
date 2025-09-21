@@ -95,6 +95,13 @@
   if(params.has('target')){
     const d=new Date(params.get('target'));
     if(!isNaN(d)) target=d;
+  } else {
+    // Default target: 23 September 2025, 10:10
+    target=new Date('2025-09-23T10:10');
+  }
+
+  if(target){
+    try { input.value=target.toISOString().slice(0,16);} catch(e){}
   }
 
   function pad(n){return n.toString().padStart(2,'0');}
